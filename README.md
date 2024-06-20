@@ -1,67 +1,72 @@
 # V-Tree: Efficient kNN Search on Moving Objects with Road-Network Constraints
 
-This project consists of implement of V-Tree, which designed to support kNN search on moving objects with road-network constraints. 
+This project consists of an implementation of V-Tree, which is designed to support kNN search on moving objects with
+road-network constraints.
 
-# [Dependence]
-[METIS] is required before you run the program.it is used to partition the graph.
-Thus, before compile our code, you must install METIS in your linux system.
-METIS link & download: http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
+## 安装指南
 
-    
-    get metics from
-    http://glaros.dtc.umn.edu/gkhome/metis/metis/download
-    
-    
-##[Example of Install METIS]
- 
+笔者在此记录一下使用 V-Tree 代码中的问题，以便日后参考。当前系统环境为 Archlinux (2024/6/20)，偏好使用 clang 进行编译。
 
-    wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz
-    gunzip metis-5.x.y.tar.gz
-    tar -xvf metis-5.x.y.tar
-    cd metics-5.x.y
-    make config
-    make
-    make install
-    
+1. 首先安装依赖 [METIS](https://github.com/DMA-Lab/METIS)，而 METIS 又依赖于 [GKlib](https://github.com/KarypisLab/GKlib)
+   ，因此需要参考它们的 README 操作。需要注意，这两个程序默认的安装位置是 `~/local`，该路径并不是一个常见的安装路径，建议在安装时使用：
+   ```shell
+   $ make config shared=1 prefix=/usr/local
+   $ make
+   $ sudo make install 
+   ```
+   对 `/usr/local` 的读写需要管理员权限。
 
-#[Compile]
---------------------------------------------
-Simple build the file is make.
+2. 按照 [@TsinghuaDatabaseGroup ](https://github.com/TsinghuaDatabaseGroup) 给出的使用方式，编译：
 
-    
-    make 
-     
-    
-The manual compile is :
+    ```shell
+   $ make
+   ```
+
+   这份 fork 中对 makefile 进行了适当地修改。由于 `libmetis.so` 依赖 GKlib，因此需要在编译时指定 `-lGKlib`
+   。链接器将链接 `/usr/local/lib/libGKlib.a`。
+   修改后的编译命令指令如下：
+    ```shell
+    $ clang++ -O3 vtree_build.cpp -lmetis -lGKlib -o vtree_build
+    $ clang++ -O3 vtree_knn_demo.cpp -lmetis -lGKlib -o vtree_knn_demo
     ```
-    g++  -O3 vtree_build.cpp  -lmetis -o vtree_build
-    g++  -O3 vtree_knn_demo.cpp -lmetis -o vtree_knn_demo
-    ```
+   按照编译器的规则，依赖库（`-lGKlib`）需要放在更后面。
 
-Beware the linking issue, in our case, we use "g++ ... -lmetis"
-If it is not working, you can try "g++ ... -L/**/**/YOUR_METIS_LIB_PATH"
-Make sure "metis.h" is in your default include(.h) directory.
+## 使用方式
 
-#[Usage]
---------------------------------------------
-1.Build a vtree index.
-./vtree_build ./input_edge_file ./output_file
-2.Load VTree and run KNN test use 
-./vtree_knn_demo  ./VTree_file $K(int) $car_percent(int) $change_percent(int) $query_per_update'
- k means the number of k neighborhoods 
- `car_percent` is the number of running vehicles on the road network
- `change_percent` means the percent of vehicles change to the other vertex between each query.
- `query_per_update` means the query number in between two updates 
+构建vtree索引。
 
-Some annotations were written among the code.
+```shell
+$ ./vtree_build ./input_edge_file ./output_file
+```
 
-####[Example]
+使用 `./vtree_build` 程序，输入边文件路径 `./input_edge_file`，输出文件路径 `./output_file` 来构建 VTree 索引。
 
-    ./vtree_build NW.vedge NW.vtree
-    ./vtree_knn_demo NW.vtree 10 0.01 0.002 6
+加载VTree并运行KNN测试。
 
-##[Input file format]
--------------------------------------------
+```shell
+./vtree_knn_demo ./VTree_file $K(int) $car_percent(int) $change_percent(int) $query_per_update
+```
+
+使用`./vtree_knn_demo` 程序，输入VTree文件路径`./VTree_file`，及以下参数：
+
+- `K(int)`：表示K邻域的数量。
+- `car_percent(int)`：表示道路网络中运行车辆的数量。
+- `change_percent(int)`：表示每次查询之间车辆改变到其他顶点的百分比。
+- `query_per_update`：表示两次更新之间的查询数量。
+
+代码中包含了一些注释。
+
+## 示例
+
+这是原仓库给出的示例，不知道为什么运行后报错。
+
+```shell
+$ ./vtree_build NW.vedge NW.vtree
+$ ./vtree_knn_demo NW.vtree 10 0.01 0.002 6
+```
+
+## 输入文件格式
+
 The edge file is consist of two pars. First line is the overall information of the
  graph. The other line is the detail edge information.
     
@@ -73,15 +78,15 @@ The edge file is consist of two pars. First line is the overall information of t
     2 3 2394
     2 7 3857
     ...
-    
-The VTree input is directed graph. If an undirected graph is used, it also support that. 
+
+The VTree input is directed graph. If an undirected graph is used, it also supports that.
 !The parameter RevE needs to be true when the undirected graph is used.
 !If the number of graph is not 
 In our code, we did not assert the input graph is connected graph
 But connected graph must be guaranteed before METIS partition the graph
 Hence, it is suggested you have to pre-process the input road network for your own dataset
 
-##[Some useful parameter of the source code]
+## [Some useful parameter of the source code]
 -----
 Partition_Part       // the fanout of the vtree
 
@@ -98,7 +103,7 @@ simple run is run
 
     bash run_demo.sh
 
-# Licence
+## Licence
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
