@@ -42,16 +42,21 @@ void TIME_TICK_END() {
 void TIME_TICK_PRINT(const char *T, int N = 1) { printf("%s RESULT: \t%lld\t (us)\r\n", (T), (te - ts) / N); }
 void TIME_TICK_ALL_PRINT(const char *T, int N = 1) { printf("%s RESULT: \t%lld\t (us)\r\n", (T), (te - ts)); }
 
+template <typename A, typename B>
+istream &operator>>(istream &in, pair<A, B> &p) {
+    in >> p.first >> p.second;
+    return in;
+}
+template <typename A, typename B>
+ostream &operator<<(ostream &out, const pair<A, B> &p) {
+    out << p.first << ' ' << p.second << ' ';
+    return out;
+}
 template <typename T>
 ostream &operator<<(ostream &out, const vector<T> &v) {
     out << v.size() << ' ';
     for (int i = 0; i < v.size(); i++)
         out << v[i] << ' ';
-    return out;
-}
-template <typename A, typename B>
-ostream &operator<<(ostream &out, const pair<A, B> &p) {
-    out << p.first << ' ' << p.second << ' ';
     return out;
 }
 template <typename T>
@@ -66,11 +71,7 @@ istream &operator>>(istream &in, vector<T> &v) {
     }
     return in;
 }
-template <typename A, typename B>
-istream &operator>>(istream &in, pair<A, B> &p) {
-    in >> p.first >> p.second;
-    return in;
-}
+
 template <typename A, typename B>
 ostream &operator<<(ostream &out, const map<A, B> &h) {
     out << h.size() << ' ';
@@ -781,7 +782,7 @@ struct G_Tree
             delete[] graph;
             make_border(x, node[x].color);
             if (node[x].n > 50)
-                printf("border=%d\n", node[x].borders.size());
+                printf("border=%zu\n", node[x].borders.size());
             // give the value of border to subgraph
             map<int, pair<int, int>>::iterator iter;
             for (iter = node[x].borders.begin(); iter != node[x].borders.end(); iter++) {
